@@ -145,8 +145,13 @@ function initBioHover() {
     photo.src = tile.querySelector('img')?.src ?? '';
     photo.alt = '';
     nameEl.textContent = tile.querySelector('h4')?.textContent ?? '';
-    roleEl.textContent = tile.querySelector('.team-card__meta span')?.textContent ?? '';
+    roleEl.textContent = tile.querySelector('.team-card__meta > span')?.textContent ?? '';
     contentEl.replaceChildren(tpl.content.cloneNode(true));
+    // The panel can't scroll (it is pointer-transparent), so the whole
+    // bio must fit on screen: cap impact bullets at three.
+    contentEl.querySelectorAll('ul').forEach((ul) => {
+      [...ul.children].slice(3).forEach((li) => li.remove());
+    });
     return true;
   }
 
