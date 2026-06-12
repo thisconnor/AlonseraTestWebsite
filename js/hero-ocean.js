@@ -13,7 +13,7 @@ const TIERS = {
 
 const OCEAN_W = 46;
 const OCEAN_D = 30;
-const MAX_RIPPLES = 3;
+const MAX_RIPPLES = 6;
 
 const vertexShader = /* glsl */ `
   uniform float uTime;
@@ -63,8 +63,8 @@ const vertexShader = /* glsl */ `
         float age = uTime - r.z;
         if (age > 0.0 && age < 3.0) {
           float d = distance(p.xz, r.xy);
-          float ring = sin(d * 3.4 - age * 5.5) * exp(-d * 0.5) * exp(-age * 1.5) * r.w;
-          disp.y += ring * 0.35;
+          float ring = sin(d * 3.2 - age * 5.0) * exp(-d * 0.42) * exp(-age * 1.15) * r.w;
+          disp.y += ring * 0.5;
           rippleSum += abs(ring);
         }
       }
@@ -211,8 +211,10 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
 
     const now = clock.getElapsedTime();
     const moved = lastRipplePos.distanceTo(new THREE.Vector2(hit.x, hit.z));
-    if (now - lastRippleTime > 0.14 && moved > 0.5) {
-      ripples[rippleIndex].set(hit.x, hit.z, now, 1.0);
+    if (now - lastRippleTime > 0.08 && moved > 0.3) {
+      // Faster strokes throw bigger wakes
+      const strength = Math.min(0.6 + moved * 0.5, 1.7);
+      ripples[rippleIndex].set(hit.x, hit.z, now, strength);
       rippleIndex = (rippleIndex + 1) % MAX_RIPPLES;
       lastRippleTime = now;
       lastRipplePos.set(hit.x, hit.z);

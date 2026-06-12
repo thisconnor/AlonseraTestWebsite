@@ -107,6 +107,17 @@ function initVideoFeature() {
       },
     });
 
+  // Merge the film with the motion system: render it as a cursor-reactive
+  // water surface on capable desktop browsers (plain video elsewhere).
+  if (window.matchMedia('(min-width: 860px) and (hover: hover)').matches) {
+    import('./video-ocean.js')
+      .then(({ createVideoOcean }) => {
+        const ocean = createVideoOcean(frame, video);
+        window.addEventListener('pagehide', () => ocean.destroy(), { once: true });
+      })
+      .catch(() => { /* plain video remains */ });
+  }
+
   soundBtn?.addEventListener('click', () => {
     const unmuting = video.muted;
     video.muted = !unmuting;
