@@ -13,20 +13,20 @@
 }
 
 :root {
-  /* Color */
-  --navy: hsl(228.5, 86%, 27%);          /* #0A2182 — headings, wordmark   */
-  --navy-deep: hsl(228.5, 80%, 18%);     /* darker shade for footer        */
-  --purple: hsl(250.7, 43%, 48%);        /* #5946B1 — logo orb, buttons    */
+  /* Color — official brand palette (Alon Sera Branding Colors.pdf) */
+  --navy: #0a2182;                       /* headings, wordmark            */
+  --navy-deep: hsl(228.5, 80%, 18%);     /* darker shade for footer       */
+  --purple: #5946b1;                     /* logo orb, buttons             */
   --purple-soft: hsl(250.7, 55%, 64%);
-  --teal: hsl(182.9, 62%, 61%);          /* #56D2DB — accent               */
-  --teal-deep: hsl(182.9, 55%, 42%);
-  --lavender: hsl(248.2, 68%, 85%);      /* hero field tint                */
-  --lavender-soft: hsl(248.2, 70%, 93%);
-  --lavender-ghost: hsl(248.2, 75%, 97%);
+  --teal: #5dd3d9;                       /* accent                        */
+  --teal-deep: hsl(183, 55%, 42%);
+  --lavender: #dcbef7;                   /* official lilac                */
+  --lavender-soft: hsl(272, 78%, 93%);
+  --lavender-ghost: hsl(272, 80%, 97.5%);
   --ink: hsl(229, 30%, 24%);             /* body text                      */
   --ink-soft: hsl(229, 18%, 42%);        /* secondary text                 */
   --paper: #ffffff;
-  --line: hsl(248, 30%, 88%);            /* hairline borders               */
+  --line: hsl(266, 35%, 89%);            /* hairline borders               */
 
   --grad-button: linear-gradient(270deg, var(--purple), var(--purple-soft), var(--teal), var(--purple));
   --grad-band: linear-gradient(115deg, var(--lavender-soft), var(--lavender) 45%, hsl(199, 70%, 86%) 100%);

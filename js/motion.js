@@ -200,6 +200,78 @@ export function heroEntrance() {
   return tl;
 }
 
+/* ---------- Animated layered wave dividers ----------
+   [data-wave-divider="<token>"] elements get an injected 3-layer SVG
+   whose paths drift horizontally at different speeds — a living
+   shoreline between sections. The wave pattern repeats every 720 units
+   so a 0 → -720 loop is seamless. */
+const WAVE_COLORS = {
+  'navy-deep': 'hsl(228.5, 80%, 18%)',
+  navy: '#0a2182',
+  lilac: '#dcbef7',
+};
+
+function wavePathD(amp, yMid) {
+  // 4 periods of a 720-wide wave, closed upward (fill sits above the curve)
+  let d = `M0,${yMid}`;
+  for (let i = 0; i < 4; i++) {
+    const x = i * 720;
+    d += ` C${x + 120},${yMid - amp} ${x + 240},${yMid - amp} ${x + 360},${yMid}`
+       + ` C${x + 480},${yMid + amp} ${x + 600},${yMid + amp} ${x + 720},${yMid}`;
+  }
+  return `${d} L2880,0 L0,0 Z`;
+}
+
+export function initWaveDividers({ animate = true } = {}) {
+  document.querySelectorAll('[data-wave-divider]').forEach((el) => {
+    const color = WAVE_COLORS[el.dataset.waveDivider] || WAVE_COLORS['navy-deep'];
+    const layers = [
+      { amp: 16, yMid: 34, opacity: 0.18, dur: 26 },
+      { amp: 22, yMid: 46, opacity: 0.35, dur: 18 },
+      { amp: 26, yMid: 58, opacity: 1, dur: 12 },
+    ];
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 1440 90');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    layers.forEach(({ amp, yMid, opacity, dur }, i) => {
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', wavePathD(amp, yMid));
+      path.setAttribute('fill', color);
+      path.setAttribute('opacity', String(opacity));
+      svg.appendChild(path);
+      if (animate) {
+        gsap.fromTo(path, { x: i % 2 ? -720 : 0 }, {
+          x: i % 2 ? 0 : -720,
+          duration: dur,
+          ease: 'none',
+          repeat: -1,
+        });
+      }
+    });
+    el.appendChild(svg);
+  });
+}
+
+/* Ambient bob for the decorative page-hero wave strokes. */
+export function initHeroWaveStrokes() {
+  document.querySelectorAll('.page-hero__waves').forEach((svg) => {
+    const paths = svg.querySelectorAll('path');
+    gsap.fromTo(paths, { opacity: 0, y: 14 }, {
+      opacity: 1, y: 0, duration: 1.2, stagger: 0.12, ease: 'expo.out', delay: 0.4,
+    });
+    paths.forEach((p, i) => {
+      gsap.to(p, {
+        y: i % 2 ? 7 : -7,
+        duration: 3.2 + i * 0.45,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      });
+    });
+  });
+}
+
 /* Reduced-motion / failure path: make everything visible immediately. */
 export function showEverything() {
   document.querySelectorAll('[data-reveal], [data-hero-seq], [data-split], [data-scrub-text]')
@@ -220,4 +292,6 @@ export function initMotion() {
   initParallax();
   initCounters();
   initMagnetic();
+  initWaveDividers({ animate: true });
+  initHeroWaveStrokes();
 }

@@ -9,7 +9,7 @@
   <meta property="og:description" content="A new-wave consultancy for the age of intelligent systems. US$8B+ in measurable outcomes.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="assets/img/hero-wave-lines.webp">
-  <link rel="icon" type="image/webp" href="assets/img/logo-alonsera.webp">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo-icon.svg">
 
   <!-- Brand font: Halyard Display via Adobe Fonts (domain-locked to alonsera.com;
        Plus Jakarta Sans below is the self-hosted fallback) -->
@@ -27,7 +27,7 @@
   <header class="nav" data-nav>
     <div class="container nav__inner">
       <a class="nav__logo" href="index.html" aria-label="Alonsera — home">
-        <img src="assets/img/logo-alonsera.webp" alt="Alonsera" width="168" height="28">
+        <img src="assets/img/logo-line-full.svg" alt="Alonsera" width="168" height="37">
       </a>
       <nav aria-label="Primary">
         <ul class="nav__links">
@@ -36,7 +36,7 @@
           <li><a class="nav__link" href="insights.html">Insights</a></li>
         </ul>
       </nav>
-      <a class="btn btn--gradient nav__cta" data-magnetic href="#contact">Get in Touch</a>
+      <a class="btn btn--gradient nav__cta" data-magnetic href="contact.html">Get in Touch</a>
       <button class="nav__burger" data-menu-toggle aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
         <span></span><span></span>
       </button>
@@ -48,7 +48,7 @@
     <a class="menu__link" href="what-we-do.html">What We Do</a>
     <a class="menu__link" href="who-we-are.html">Who We Are</a>
     <a class="menu__link" href="insights.html">Insights</a>
-    <a class="menu__link" href="#contact" data-menu-close>Get in Touch</a>
+    <a class="menu__link" href="contact.html">Get in Touch</a>
     <div class="menu__contact">
       <a href="mailto:info@alonsera.com">info@alonsera.com</a>
       <span>Dover, Delaware · Worldwide</span>
@@ -57,34 +57,41 @@
 
   <main id="main">
 
-    <!-- ============ HERO — particle ocean ============ -->
+    <!-- ============ HERO — GLSL ocean ============ -->
     <section class="hero" data-hero aria-label="Introduction">
       <div class="hero__canvas" data-hero-canvas aria-hidden="true"></div>
       <div class="hero__fallback" aria-hidden="true">
-        <img src="assets/img/hero-wave-lines.webp" alt="" width="1000" height="833" fetchpriority="low">
+        <video data-ambient-video src="assets/video/intro-28s-720.mp4" poster="assets/img/photo-wave-crest.webp" muted loop playsinline preload="metadata"></video>
       </div>
       <div class="container hero__content">
         <p class="eyebrow" data-hero-seq>The new wave of consulting</p>
         <h1 class="hero__title" data-hero-seq data-split="lines"><span class="line-block">Responsible AI.</span> <span class="line-block">Real&#8209;world leadership.</span></h1>
         <p class="lead hero__lead" data-hero-seq>Empowering global leaders to move from vision to commercial value in the age of intelligent systems.</p>
         <div class="hero__actions" data-hero-seq>
-          <a class="btn btn--gradient" data-magnetic href="#contact">Start the conversation <span class="btn-arrow" aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn--gradient" data-magnetic href="contact.html">Start the conversation <span class="btn-arrow" aria-hidden="true">&rarr;</span></a>
           <a class="btn btn--ghost" data-magnetic href="what-we-do.html">Explore what we do</a>
         </div>
       </div>
       <div class="hero__scroll-hint" data-hero-seq aria-hidden="true">Scroll</div>
     </section>
 
-    <!-- ============ MANIFESTO ============ -->
-    <section class="section manifesto">
+    <div class="wave-divider wave-divider--flip" data-wave-divider="navy-deep" aria-hidden="true"></div>
+
+    <!-- ============ MANIFESTO over brand video ============ -->
+    <section class="section manifesto manifesto--video">
+      <div class="manifesto__bg" aria-hidden="true">
+        <video data-ambient-video src="assets/video/intro-28s-1080.mp4" poster="assets/img/photo-breaking-waves.webp" muted loop playsinline preload="metadata"></video>
+      </div>
       <div class="container">
         <p class="eyebrow" data-reveal>Why Alonsera</p>
         <p class="manifesto__text" data-scrub-text>We are here to gracefully ride the waves of transformation with you — and move you forward to new horizons.</p>
       </div>
     </section>
 
+    <div class="wave-divider" data-wave-divider="navy-deep" aria-hidden="true"></div>
+
     <!-- ============ STATS ============ -->
-    <section class="section section--tinted" aria-label="Track record">
+    <section class="section section--tinted section--waves" aria-label="Track record">
       <div class="container">
         <div class="section-head">
           <p class="eyebrow" data-reveal>Proven, measurable outcomes</p>
@@ -110,6 +117,8 @@
         <p class="lead" style="margin-top: var(--space-block); max-width: 38ch;" data-reveal>A diverse, minority and women&#8209;led firm championing ethical leadership and practical innovation.</p>
       </div>
     </section>
+
+    <div class="wave-divider wave-divider--flip" data-wave-divider="navy-deep" aria-hidden="true"></div>
 
     <!-- ============ THREE PILLARS — pinned sequence ============ -->
     <section class="section pillars" data-pillars aria-label="What we do">
@@ -185,23 +194,60 @@
       </div>
     </section>
 
+    <div class="wave-divider" data-wave-divider="navy-deep" aria-hidden="true"></div>
+
     <!-- ============ INDUSTRIES ============ -->
     <section class="section" aria-label="Industries">
       <div class="container">
         <div class="section-head">
           <p class="eyebrow" data-reveal>Where we work</p>
           <h2 data-reveal data-reveal-delay="0.08">Deep expertise, across industries.</h2>
+          <p class="lead" data-reveal data-reveal-delay="0.16">Trusted by the brands and institutions defining each sector.</p>
         </div>
-        <ul class="industries__list" data-industries data-stagger="0.06">
-          <li class="industries__row" data-preview="assets/img/industry-financial-services.webp"><span>Financial Services</span><span class="industries__num">01</span></li>
-          <li class="industries__row" data-preview="assets/img/industry-communications-media-tech.webp"><span>Communications, Media &amp; Tech</span><span class="industries__num">02</span></li>
-          <li class="industries__row" data-preview="assets/img/industry-retail-cpg.webp"><span>Retail &amp; CPG</span><span class="industries__num">03</span></li>
-          <li class="industries__row" data-preview="assets/img/industry-life-science-healthcare.webp"><span>Life Science &amp; Healthcare</span><span class="industries__num">04</span></li>
-          <li class="industries__row" data-preview="assets/img/industry-nonprofit-gov-education.webp"><span>Non-Profit, Gov &amp; Education</span><span class="industries__num">05</span></li>
-          <li class="industries__row" data-preview="assets/img/industry-travel-hospitality-realestate.webp"><span>Travel, Hospitality &amp; Real Estate</span><span class="industries__num">06</span></li>
-          <li class="industries__row" data-preview="assets/img/industry-manufacturing-auto-energy.webp"><span>Manufacturing, Auto &amp; Energy</span><span class="industries__num">07</span></li>
-        </ul>
-        <div class="industries__preview" data-industries-preview aria-hidden="true"></div>
+        <div class="industries-grid industries-grid--large" data-stagger="0.06">
+          <article class="card">
+            <figure><img src="assets/img/industry-financial-services.webp" alt="Client logos — Financial Services" width="750" height="468" loading="lazy"></figure>
+            <h4>Financial Services</h4>
+          </article>
+          <article class="card">
+            <figure><img src="assets/img/industry-communications-media-tech.webp" alt="Client logos — Communications, Media and Tech" width="750" height="468" loading="lazy"></figure>
+            <h4>Communications, Media &amp; Tech</h4>
+          </article>
+          <article class="card">
+            <figure><img src="assets/img/industry-retail-cpg.webp" alt="Client logos — Retail and CPG" width="750" height="468" loading="lazy"></figure>
+            <h4>Retail &amp; CPG</h4>
+          </article>
+          <article class="card">
+            <figure><img src="assets/img/industry-life-science-healthcare.webp" alt="Client logos — Life Science and Healthcare" width="750" height="468" loading="lazy"></figure>
+            <h4>Life Science &amp; Healthcare</h4>
+          </article>
+          <article class="card">
+            <figure><img src="assets/img/industry-nonprofit-gov-education.webp" alt="Client logos — Non-Profit, Gov and Education" width="750" height="468" loading="lazy"></figure>
+            <h4>Non-Profit, Gov &amp; Education</h4>
+          </article>
+          <article class="card">
+            <figure><img src="assets/img/industry-travel-hospitality-realestate.webp" alt="Client logos — Travel, Hospitality and Real Estate" width="750" height="468" loading="lazy"></figure>
+            <h4>Travel, Hospitality &amp; Real Estate</h4>
+          </article>
+          <article class="card">
+            <figure><img src="assets/img/industry-manufacturing-auto-energy.webp" alt="Client logos — Manufacturing, Auto and Energy" width="750" height="468" loading="lazy"></figure>
+            <h4>Manufacturing, Auto &amp; Energy</h4>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VIDEO FEATURE — the wave in motion ============ -->
+    <section class="section video-feature" data-video-feature aria-label="Alonsera in motion">
+      <div class="container section-head">
+        <p class="eyebrow" data-reveal>The wave in motion</p>
+        <h2 data-reveal data-reveal-delay="0.08">One minute on who we are.</h2>
+      </div>
+      <div class="video-feature__stage">
+        <div class="video-feature__frame" data-video-frame>
+          <video data-feature-video src="assets/video/intro-60s-1080.mp4" poster="assets/video/intro-poster.jpg" muted loop playsinline preload="metadata"></video>
+          <button class="video-feature__sound" data-video-sound aria-pressed="false">Sound on</button>
+        </div>
       </div>
     </section>
 
@@ -252,25 +298,19 @@
         <p class="eyebrow" data-reveal>Our ecosystem</p>
         <h2 data-reveal data-reveal-delay="0.08">Leading the new wave of innovation with our partners.</h2>
       </div>
-      <div class="partners__rows" data-reveal="fade">
-        <div class="marquee" data-marquee>
-          <div class="marquee__track">
-            <div class="marquee__item"><img src="assets/img/partners-strategic.webp" alt="Alonsera strategic partners" width="1500" height="120" loading="lazy"></div>
-            <div class="marquee__item" aria-hidden="true"><img src="assets/img/partners-strategic.webp" alt="" width="1500" height="120" loading="lazy"></div>
-          </div>
-        </div>
-        <div class="marquee marquee--reverse" data-marquee>
-          <div class="marquee__track">
-            <div class="marquee__item"><img src="assets/img/partners-alliance.webp" alt="Alonsera alliance partners" width="1500" height="120" loading="lazy"></div>
-            <div class="marquee__item" aria-hidden="true"><img src="assets/img/partners-alliance.webp" alt="" width="1500" height="120" loading="lazy"></div>
-          </div>
-        </div>
-        <div class="marquee" data-marquee>
-          <div class="marquee__track" style="--marquee-duration: 46s;">
-            <div class="marquee__item"><img src="assets/img/partners-technology.webp" alt="Alonsera technology partners" width="1500" height="120" loading="lazy"></div>
-            <div class="marquee__item" aria-hidden="true"><img src="assets/img/partners-technology.webp" alt="" width="1500" height="120" loading="lazy"></div>
-          </div>
-        </div>
+      <div class="container partner-strips">
+        <figure class="partner-strip" data-reveal>
+          <figcaption>Strategic partners</figcaption>
+          <img src="assets/img/partners-strategic.webp" alt="Alonsera strategic partner logos" width="1500" height="120" loading="lazy">
+        </figure>
+        <figure class="partner-strip" data-reveal>
+          <figcaption>Alliance partners</figcaption>
+          <img src="assets/img/partners-alliance.webp" alt="Alonsera alliance partner logos" width="1500" height="120" loading="lazy">
+        </figure>
+        <figure class="partner-strip" data-reveal>
+          <figcaption>Technology partners</figcaption>
+          <img src="assets/img/partners-technology.webp" alt="Alonsera technology partner logos" width="1500" height="120" loading="lazy">
+        </figure>
       </div>
     </section>
 
@@ -281,13 +321,15 @@
           <p class="eyebrow">Ready when you are</p>
           <h2 data-split="lines">Ready to ride the next wave?</h2>
           <p class="lead" style="max-width: 44ch;">Let&rsquo;s move your organization from AI ambition to measurable, responsible outcomes.</p>
-          <a class="btn btn--gradient" data-magnetic href="mailto:info@alonsera.com?subject=Working%20with%20Alonsera">info@alonsera.com <span class="btn-arrow" aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn--gradient" data-magnetic href="contact.html">Start the conversation <span class="btn-arrow" aria-hidden="true">&rarr;</span></a>
         </div>
       </div>
     </section>
   </main>
 
   <!-- ============ FOOTER ============ -->
+  <div class="wave-divider wave-divider--flip" data-wave-divider="navy-deep" aria-hidden="true"></div>
+
   <footer class="footer" id="contact">
     <div class="container">
       <div class="footer__grid">
@@ -317,9 +359,7 @@
         </div>
       </div>
 
-      <svg class="footer__wordmark" viewBox="0 0 740 150" aria-hidden="true" data-wordmark>
-        <text x="0" y="128" font-size="160">alonsera</text>
-      </svg>
+      <img class="footer__wordmark" src="assets/img/logo-line-white.svg" alt="" width="740" height="165" loading="lazy" data-wordmark>
 
       <div class="footer__legal">
         <span>&copy; 2026 AlonSera LLC. All rights reserved.</span>

@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
 const BASE = process.env.QA_BASE || 'http://localhost:3210/AlonseraTestWebsite/';
-const PAGES = ['index.html', 'what-we-do.html', 'who-we-are.html', 'insights.html'];
+const PAGES = ['index.html', 'what-we-do.html', 'who-we-are.html', 'insights.html', 'contact.html'];
 const VIEWPORTS = [
   { name: 'mobile', width: 375, height: 812 },
   { name: 'tablet', width: 768, height: 1024 },
@@ -49,8 +49,9 @@ async function auditPage(pageName, vp, { reducedMotion = false } = {}) {
     }
   });
 
-  await page.goto(BASE + pageName, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(2000); // entrance choreography
+  // 'load' rather than 'networkidle': ambient videos stream indefinitely
+  await page.goto(BASE + pageName, { waitUntil: 'load', timeout: 60000 });
+  await page.waitForTimeout(2500); // entrance choreography
   await page.screenshot({ path: `qa-output/${label}-top.png` });
 
   // Scroll through in steps so once-reveals and the pin sequence fire
