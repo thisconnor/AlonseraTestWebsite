@@ -25,16 +25,23 @@
 
 .hero__fallback {
   position: absolute;
-  inset: auto 0 0 0;
+  inset: 0;
   z-index: 0;
   display: none;
   pointer-events: none;
+  overflow: hidden;
 }
-.hero__fallback img {
+.hero__fallback video {
   width: 100%;
-  height: clamp(280px, 52vh, 560px);
+  height: 100%;
   object-fit: cover;
-  object-position: center top;
+}
+.hero__fallback::after {
+  /* keep headline readable over the video */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.4) 48%, rgba(244, 237, 254, 0.08) 100%);
 }
 .hero.is-fallback .hero__fallback { display: block; }
 .hero.is-fallback .hero__canvas { display: none; }
@@ -46,7 +53,7 @@
   gap: 1.6rem;
   justify-items: start;
   max-width: 56rem;
-  padding-bottom: clamp(8rem, 22vh, 14rem);
+  padding-bottom: clamp(10rem, 26vh, 17rem);
 }
 
 .hero__title { max-width: 15ch; }
@@ -83,10 +90,12 @@
   content: "";
   width: 1.5px;
   height: 2.4rem;
-  background: linear-gradient(180deg, var(--navy), transparent);
+  background: linear-gradient(180deg, currentColor, transparent);
 }
+/* over the ocean canvas the hint sits on water — flip to white */
+.hero:not(.is-fallback) .hero__scroll-hint { color: #fff; opacity: 0.9; }
 
-/* ---------- Manifesto (scrubbed text fill) ---------- */
+/* ---------- Manifesto (scrubbed text fill over brand video) ---------- */
 
 .manifesto { text-align: left; }
 .manifesto__text {
@@ -98,6 +107,30 @@
   max-width: 28ch;
 }
 .manifesto__text .w { opacity: 0.14; }
+
+.manifesto--video {
+  position: relative;
+  overflow: hidden;
+}
+.manifesto--video .manifesto__bg {
+  position: absolute;
+  inset: -12% 0;
+  z-index: 0;
+}
+.manifesto--video .manifesto__bg video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.manifesto--video .manifesto__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(10, 23, 80, 0.82) 20%, rgba(10, 23, 80, 0.55) 65%, rgba(89, 70, 177, 0.35));
+}
+.manifesto--video .container { position: relative; z-index: 1; }
+.manifesto--video .manifesto__text { color: #fff; }
+.manifesto--video .eyebrow { color: var(--teal); }
 
 /* ---------- Stats band ---------- */
 
@@ -226,64 +259,8 @@
   .pillars__progress { display: none; }
 }
 
-/* ---------- Industries ---------- */
+/* ---------- Industries: client-logo collage cards ---------- */
 
-.industries__list { list-style: none; padding: 0; border-top: 1px solid var(--line); }
-
-.industries__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: clamp(1.1rem, 2.4vw, 1.7rem) 0.25rem;
-  border-bottom: 1px solid var(--line);
-  color: var(--navy);
-  font-size: var(--text-h4);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  transition: letter-spacing var(--dur-micro) var(--ease-out), color var(--dur-micro) ease, padding-left var(--dur-micro) var(--ease-out);
-  cursor: default;
-}
-.industries__row:hover {
-  letter-spacing: 0.01em;
-  padding-left: 0.9rem;
-  color: var(--purple);
-}
-.industries__row .industries__num {
-  font-size: var(--text-small);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--purple-soft);
-}
-
-.industries__preview {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 90;
-  width: 260px;
-  aspect-ratio: 4 / 3;
-  border-radius: 1rem;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0;
-  transform: scale(0.92);
-  box-shadow: 0 30px 60px -20px rgba(10, 33, 130, 0.35);
-}
-.industries__preview img {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0;
-}
-.industries__preview img.is-active { opacity: 1; }
-
-@media (max-width: 859px), (hover: none) {
-  .industries__preview { display: none; }
-}
-
-/* Industries as a card grid (what-we-do page + mobile alternative) */
 .industries-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -294,9 +271,22 @@
   border-radius: 0.9rem;
   overflow: hidden;
   aspect-ratio: 16 / 10;
+  background: #fff;
+  display: grid;
+  place-items: center;
 }
-.industries-grid .card img { width: 100%; height: 100%; object-fit: cover; }
+.industries-grid .card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;       /* logo collages must never be cropped */
+  padding: 0.4rem;
+}
 .industries-grid .card h4 { font-size: 1.1rem; }
+
+/* Larger collage cards for the homepage */
+.industries-grid--large { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.industries-grid--large .card figure { aspect-ratio: 16 / 11; }
+.industries-grid--large .card h4 { font-size: var(--text-h4); }
 
 /* ---------- Insights teaser / white paper ---------- */
 
@@ -487,14 +477,36 @@
 .leader-card__role { color: var(--purple); font-weight: 600; margin-top: 0.3rem; }
 .leader-card__bio { margin-top: 1.2rem; display: grid; gap: 0.9rem; color: var(--ink-soft); }
 
-.team-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.2rem;
+/* (Photo team cards live in components.css) */
+
+/* ---------- Full-bleed photo band ---------- */
+
+.photo-band {
+  height: clamp(280px, 52vh, 560px);
+  overflow: hidden;
 }
-.team-grid .card { display: grid; gap: 0.2rem; padding: 1.5rem 1.6rem; }
-.team-grid .card h4 { font-size: 1.15rem; }
-.team-grid .card span { color: var(--ink-soft); font-size: var(--text-small); }
+.photo-band > div { height: 100%; }
+.photo-band img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------- Decorative wavy-lines backdrop ---------- */
+
+.section--waves {
+  position: relative;
+  overflow: hidden;
+}
+.section--waves::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../assets/img/wavy-lines.webp") right -10% center / clamp(420px, 46vw, 760px) auto no-repeat;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.section--waves > * { position: relative; }
 
 /* ---------- Insights page ---------- */
 

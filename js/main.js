@@ -84,9 +84,52 @@ function initAnchors() {
   });
 }
 
+/* ---------- Ambient videos: play only in view, never under reduced motion ---------- */
+function initAmbientVideos() {
+  const videos = document.querySelectorAll('video[data-ambient-video], video[data-feature-video]');
+  if (!videos.length) return;
+  if (reduced) {
+    videos.forEach((v) => { v.removeAttribute('autoplay'); v.pause(); });
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(({ target, isIntersecting }) => {
+      if (isIntersecting) target.play().catch(() => {});
+      else target.pause();
+    });
+  }, { rootMargin: '100px' });
+  videos.forEach((v) => io.observe(v));
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) videos.forEach((v) => v.pause());
+  });
+}
+
+/* ---------- Contact form → pre-filled email ---------- */
+function initContactForm() {
+  const form = document.querySelector('[data-contact-form]');
+  if (!form) return;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    const data = new FormData(form);
+    const subject = `Website inquiry — ${data.get('name') || 'New contact'}`;
+    const body = [
+      `Name: ${data.get('name') || ''}`,
+      `Email: ${data.get('email') || ''}`,
+      `Organization: ${data.get('organization') || '—'}`,
+      '',
+      data.get('message') || '',
+    ].join('\n');
+    window.location.href =
+      `mailto:info@alonsera.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
+}
+
 /* ---------- Boot ---------- */
 initNav();
 initAnchors();
+initAmbientVideos();
+initContactForm();
 
 if (reduced) {
   showEverything();

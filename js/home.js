@@ -1,14 +1,13 @@
-/* Homepage set pieces: particle ocean, pinned pillars, industries preview. */
-import { hasFinePointer } from './utils.js';
+/* Homepage set pieces: GLSL ocean, pinned pillars, expanding video feature. */
 
-/* ---------- Particle ocean (lazy: only when capable) ---------- */
+/* ---------- Ocean hero (lazy: only when capable) ---------- */
 async function initOcean({ tl, isMobile, webglOK }) {
   const hero = document.querySelector('[data-hero]');
   const mount = document.querySelector('[data-hero-canvas]');
   if (!hero || !mount) return;
 
   if (isMobile || !webglOK) {
-    hero.classList.add('is-fallback');
+    hero.classList.add('is-fallback'); // brand video (or poster) hero
     return;
   }
 
@@ -38,7 +37,7 @@ async function initOcean({ tl, isMobile, webglOK }) {
 
     window.addEventListener('pagehide', () => ocean.destroy(), { once: true });
   } catch (err) {
-    console.warn('WebGL ocean unavailable; using static hero.', err);
+    console.warn('WebGL ocean unavailable; using video hero.', err);
     hero.classList.add('is-fallback');
   }
 }
@@ -87,51 +86,41 @@ function initPillars() {
   });
 }
 
-/* ---------- Industries: cursor-following preview ---------- */
-function initIndustriesPreview() {
-  if (!hasFinePointer()) return;
-  const list = document.querySelector('[data-industries]');
-  const preview = document.querySelector('[data-industries-preview]');
-  if (!list || !preview) return;
+/* ---------- Expanding video feature ---------- */
+function initVideoFeature() {
+  const stage = document.querySelector('[data-video-feature]');
+  const frame = document.querySelector('[data-video-frame]');
+  const video = document.querySelector('[data-feature-video]');
+  const soundBtn = document.querySelector('[data-video-sound]');
+  if (!stage || !frame || !video) return;
 
-  const images = new Map();
-  list.querySelectorAll('[data-preview]').forEach((row) => {
-    const src = row.dataset.preview;
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = '';
-    img.loading = 'lazy';
-    preview.appendChild(img);
-    images.set(row, img);
-  });
-
-  const xTo = gsap.quickTo(preview, 'x', { duration: 0.5, ease: 'power3.out' });
-  const yTo = gsap.quickTo(preview, 'y', { duration: 0.5, ease: 'power3.out' });
-  gsap.set(preview, { xPercent: 12, yPercent: -50 });
-
-  let visible = false;
-  list.addEventListener('mousemove', (e) => {
-    xTo(e.clientX);
-    yTo(e.clientY);
-  });
-  list.querySelectorAll('[data-preview]').forEach((row) => {
-    row.addEventListener('mouseenter', () => {
-      images.forEach((img) => img.classList.remove('is-active'));
-      images.get(row)?.classList.add('is-active');
-      if (!visible) {
-        visible = true;
-        gsap.to(preview, { opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out' });
-      }
+  gsap.fromTo(frame,
+    { clipPath: 'inset(5% 12% round 28px)' },
+    {
+      clipPath: 'inset(0% 0% round 0px)',
+      ease: 'none',
+      scrollTrigger: {
+        trigger: frame,
+        start: 'top 85%',
+        end: 'top 22%',
+        scrub: 0.5,
+      },
     });
-  });
-  list.addEventListener('mouseleave', () => {
-    visible = false;
-    gsap.to(preview, { opacity: 0, scale: 0.92, duration: 0.3, ease: 'power2.in' });
+
+  soundBtn?.addEventListener('click', () => {
+    const unmuting = video.muted;
+    video.muted = !unmuting;
+    if (unmuting) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
+    soundBtn.setAttribute('aria-pressed', String(unmuting));
+    soundBtn.textContent = unmuting ? 'Sound off' : 'Sound on';
   });
 }
 
 export function initHome(ctx) {
   initOcean(ctx);
   initPillars();
-  initIndustriesPreview();
+  initVideoFeature();
 }

@@ -1,91 +1,81 @@
-/* GPU particle ocean — the signature hero moment.
-   A single THREE.Points grid displaced entirely in the vertex shader:
-   four Gerstner-style wave octaves + pointer ripples, with a height-based
-   color ramp (deep purple → lavender → teal → white foam) and specular
-   sparkle. One draw call; all motion on the GPU. */
+/* Realistic GLSL ocean — the signature hero moment, v2.
+   A continuous surface mesh displaced by Gerstner waves in the vertex
+   shader; the fragment shader mixes brand-tinted water with a fresnel
+   reflection of the lilac sky, sun glint, procedural foam, and distance
+   fog so the horizon dissolves into the page. Pointer ripples ride on
+   top via a small ring buffer. One mesh, one draw call. */
 import * as THREE from '../assets/vendor/three.module.min.js';
 
 const TIERS = {
-  desktop: { cols: 256, rows: 160 },
-  tablet: { cols: 144, rows: 96 },
+  desktop: { segX: 384, segZ: 256 },
+  tablet: { segX: 208, segZ: 144 },
 };
 
-const OCEAN_W = 30;   // world units, x
-const OCEAN_D = 22;   // world units, z (depth away from camera)
+const OCEAN_W = 46;
+const OCEAN_D = 30;
 const MAX_RIPPLES = 3;
 
 const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform float uAmplitude;
-  uniform float uPointSize;
-  uniform float uPixelRatio;
-  uniform vec4  uRipples[${MAX_RIPPLES}]; // xy: world pos, z: start time, w: strength
-  attribute float aRandom;
-  varying float vHeight;     // normalized -1..1
-  varying float vSpec;
-  varying float vDepth;      // 0 near .. 1 far
-  varying float vRandom;
+  uniform vec4 uRipples[${MAX_RIPPLES}]; // xy: world pos, z: start time, w: strength
+  varying vec3 vNormal;
+  varying vec3 vWorldPos;
+  varying float vCrest;   // 0..1 normalized crest factor for foam/color
+  varying float vRipple;  // ripple ring intensity for foam
 
-  // direction (unit), frequency, speed, amplitude share
-  const vec2 D1 = vec2(0.86, 0.50);
-  const vec2 D2 = vec2(-0.62, 0.78);
-  const vec2 D3 = vec2(0.22, -0.97);
-  const vec2 D4 = vec2(-0.97, -0.26);
+  // One Gerstner octave. d: direction, steep: steepness, wl: wavelength.
+  vec3 gerstner(vec2 d, float steep, float wl, vec3 p, inout vec3 T, inout vec3 B, inout float crest) {
+    float k = 6.28318 / wl;
+    float c = sqrt(9.8 / k);
+    vec2 dir = normalize(d);
+    float f = k * (dot(dir, p.xz) - c * uTime);
+    float a = (steep / k) * uAmplitude;
+    float sf = sin(f);
+    float cf = cos(f);
+    float s = steep * uAmplitude;
 
-  float waveH(vec2 p, vec2 dir, float freq, float speed, float amp, out vec2 grad) {
-    float phase = dot(dir, p) * freq + uTime * speed;
-    float s = sin(phase);
-    float c = cos(phase);
-    grad = dir * freq * amp * c;
-    return amp * s;
+    T += vec3(-dir.x * dir.x * s * sf, dir.x * s * cf, -dir.x * dir.y * s * sf);
+    B += vec3(-dir.x * dir.y * s * sf, dir.y * s * cf, -dir.y * dir.y * s * sf);
+    crest += sf * steep;
+    return vec3(dir.x * a * cf, a * sf, dir.y * a * cf);
   }
 
   void main() {
-    vec3 pos = position;
-    vec2 p = pos.xz;
-    vRandom = aRandom;
+    vec3 p = position;
+    vec3 T = vec3(1.0, 0.0, 0.0);
+    vec3 B = vec3(0.0, 0.0, 1.0);
+    float crest = 0.0;
 
-    vec2 g, gSum = vec2(0.0);
-    float h = 0.0;
-    h += waveH(p, D1, 0.55, 0.85, 0.42, g); gSum += g;
-    h += waveH(p, D2, 0.95, 1.15, 0.26, g); gSum += g;
-    h += waveH(p, D3, 1.70, 1.60, 0.14, g); gSum += g;
-    h += waveH(p, D4, 3.10, 2.10, 0.07, g); gSum += g;
-    h *= uAmplitude;
-    gSum *= uAmplitude;
+    vec3 disp = vec3(0.0);
+    disp += gerstner(vec2( 1.00,  0.35), 0.16, 11.0, p, T, B, crest);
+    disp += gerstner(vec2( 0.70, -0.60), 0.14, 6.5, p, T, B, crest);
+    disp += gerstner(vec2(-0.45,  0.85), 0.12, 4.2, p, T, B, crest);
+    disp += gerstner(vec2( 0.95, -0.15), 0.10, 2.6, p, T, B, crest);
+    disp += gerstner(vec2(-0.20, -0.95), 0.08, 1.6, p, T, B, crest);
+    disp += gerstner(vec2( 0.55,  0.80), 0.06, 0.9, p, T, B, crest);
 
-    // Pointer ripples: expanding damped rings
+    // Pointer ripples: expanding damped rings (vertical only)
+    float rippleSum = 0.0;
     for (int i = 0; i < ${MAX_RIPPLES}; i++) {
       vec4 r = uRipples[i];
       if (r.w > 0.001) {
         float age = uTime - r.z;
         if (age > 0.0 && age < 3.0) {
-          float d = distance(p, r.xy);
-          float ring = sin(d * 4.5 - age * 6.0)
-                     * exp(-d * 0.45)
-                     * exp(-age * 1.6)
-                     * r.w;
-          h += ring * 0.5;
+          float d = distance(p.xz, r.xy);
+          float ring = sin(d * 3.4 - age * 5.5) * exp(-d * 0.5) * exp(-age * 1.5) * r.w;
+          disp.y += ring * 0.35;
+          rippleSum += abs(ring);
         }
       }
     }
 
-    pos.y = h;
-    vHeight = clamp(h / max(uAmplitude * 0.75, 0.001), -1.0, 1.0);
-
-    // Approximate normal from analytic gradient → cheap specular
-    vec3 n = normalize(vec3(-gSum.x, 1.0, -gSum.y));
-    vec3 lightDir = normalize(vec3(0.35, 0.8, 0.45));
-    vec3 viewDir = normalize(cameraPosition - pos);
-    vec3 halfVec = normalize(lightDir + viewDir);
-    vSpec = pow(max(dot(n, halfVec), 0.0), 24.0);
-
-    vDepth = clamp(-pos.z / ${OCEAN_D.toFixed(1)}, 0.0, 1.0);
-
-    vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-    gl_Position = projectionMatrix * mv;
-    float size = uPointSize * uPixelRatio * (1.0 + aRandom * 0.7);
-    gl_PointSize = size * (9.0 / max(-mv.z, 0.5));
+    vec3 pos = p + disp;
+    vNormal = normalize(cross(B, T));
+    vWorldPos = pos;
+    vCrest = clamp(crest * 0.75 + 0.5, 0.0, 1.0);
+    vRipple = clamp(rippleSum * 2.2, 0.0, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
 `;
 
@@ -94,83 +84,97 @@ const fragmentShader = /* glsl */ `
   uniform float uFade;
   uniform vec3 uColorDeep;
   uniform vec3 uColorMid;
-  uniform vec3 uColorCrest;
-  uniform vec3 uColorFoam;
-  varying float vHeight;
-  varying float vSpec;
-  varying float vDepth;
-  varying float vRandom;
+  uniform vec3 uColorShallow;
+  uniform vec3 uSkyLow;
+  uniform vec3 uSkyHigh;
+  uniform vec3 uSunDir;
+  varying vec3 vNormal;
+  varying vec3 vWorldPos;
+  varying float vCrest;
+  varying float vRipple;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x),
+               mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+  }
+  float fbm(vec2 p) {
+    return vnoise(p) * 0.55 + vnoise(p * 2.3) * 0.3 + vnoise(p * 5.1) * 0.15;
+  }
 
   void main() {
-    // Soft round sprite
-    float d = length(gl_PointCoord - vec2(0.5));
-    float alpha = smoothstep(0.5, 0.12, d);
-    if (alpha < 0.01) discard;
+    vec3 n = normalize(vNormal);
+    vec3 viewDir = normalize(cameraPosition - vWorldPos);
 
-    // Height ramp: deep → mid → crest → foam
-    float t = vHeight * 0.5 + 0.5;
-    vec3 col = mix(uColorDeep, uColorMid, smoothstep(0.05, 0.55, t));
-    col = mix(col, uColorCrest, smoothstep(0.55, 0.86, t));
-    col = mix(col, uColorFoam, smoothstep(0.90, 1.0, t));
+    // Water body: deep navy troughs → purple mids → teal crests
+    vec3 water = mix(uColorDeep, uColorMid, smoothstep(0.1, 0.62, vCrest));
+    water = mix(water, uColorShallow, smoothstep(0.62, 0.95, vCrest));
 
-    // Specular sparkle with per-particle twinkle
-    float twinkle = 0.6 + 0.4 * sin(uTime * 2.2 + vRandom * 40.0);
-    col += vSpec * twinkle * 0.55;
+    // Fresnel reflection of the lilac sky
+    float fresnel = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);
+    vec3 reflDir = reflect(-viewDir, n);
+    vec3 sky = mix(uSkyLow, uSkyHigh, smoothstep(0.0, 0.55, reflDir.y));
+    vec3 col = mix(water, sky, clamp(fresnel * 0.75 + 0.08, 0.0, 1.0));
 
-    // Fade with distance (atmospheric) and entrance fade
-    alpha *= mix(0.95, 0.25, vDepth);
-    alpha *= uFade;
+    // Sun glint: tight specular + sparkling glitter band
+    float spec = pow(max(dot(reflDir, uSunDir), 0.0), 160.0);
+    float glitter = pow(max(dot(reflDir, uSunDir), 0.0), 24.0)
+                  * fbm(vWorldPos.xz * 6.0 + uTime * 0.6);
+    col += vec3(1.0, 0.98, 0.94) * (spec * 1.6 + glitter * 0.5);
 
+    // Foam: crests + slope + drifting noise, plus pointer ripple rings
+    float slope = 1.0 - n.y;
+    float foamNoise = fbm(vWorldPos.xz * 1.7 + vec2(uTime * 0.22, -uTime * 0.13));
+    float foam = smoothstep(0.68, 0.92, vCrest * (0.65 + slope * 3.2) * (0.55 + foamNoise * 0.7));
+    foam = clamp(foam + vRipple * foamNoise * 1.4, 0.0, 1.0);
+    col = mix(col, vec3(0.97, 0.96, 1.0), foam * 0.85);
+
+    // Distance fog dissolves the horizon into the page sky
+    float dist = length(cameraPosition - vWorldPos);
+    float fog = smoothstep(12.0, ${(OCEAN_D + 6).toFixed(1)}, dist);
+    col = mix(col, uSkyLow, fog * 0.9);
+
+    float alpha = uFade * (1.0 - smoothstep(0.82, 1.0, fog));
     gl_FragColor = vec4(col, alpha);
   }
 `;
 
 export async function createOcean(mount, { tier = 'desktop' } = {}) {
-  const { cols, rows } = TIERS[tier] || TIERS.desktop;
+  const { segX, segZ } = TIERS[tier] || TIERS.desktop;
 
-  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(mount.clientWidth, mount.clientHeight);
   mount.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
-    52, mount.clientWidth / mount.clientHeight, 0.1, 80,
+    50, mount.clientWidth / mount.clientHeight, 0.1, 90,
   );
-  const basePitch = -0.32;
-  camera.position.set(0, 3.1, 8.5);
+  // Slight upward pitch keeps the horizon at ~60% of the frame, leaving
+  // the upper sky band clear for the headline.
+  const basePitch = 0.055;
+  camera.position.set(0, 2.4, 10.5);
   camera.rotation.x = basePitch;
 
-  // Grid geometry: x spans the width, z recedes toward the horizon
-  const count = cols * rows;
-  const positions = new Float32Array(count * 3);
-  const randoms = new Float32Array(count);
-  let i = 0;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      positions[i * 3] = (c / (cols - 1) - 0.5) * OCEAN_W;
-      positions[i * 3 + 1] = 0;
-      positions[i * 3 + 2] = -(r / (rows - 1)) * OCEAN_D + 2.5;
-      randoms[i] = Math.random();
-      i++;
-    }
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+  const geometry = new THREE.PlaneGeometry(OCEAN_W, OCEAN_D, segX, segZ);
+  geometry.rotateX(-Math.PI / 2);
+  geometry.translate(0, 0, -OCEAN_D / 2 + 4.5);
 
   const ripples = Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4(0, 0, -10, 0));
   const uniforms = {
     uTime: { value: 0 },
     uFade: { value: 0 },
     uAmplitude: { value: 1.0 },
-    uPointSize: { value: tier === 'desktop' ? 2.4 : 3.0 },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
     uRipples: { value: ripples },
-    uColorDeep: { value: new THREE.Color('#5946b1') },
-    uColorMid: { value: new THREE.Color('#a99ce0') },
-    uColorCrest: { value: new THREE.Color('#56d2db') },
-    uColorFoam: { value: new THREE.Color('#ffffff') },
+    uColorDeep: { value: new THREE.Color('#131c66') },
+    uColorMid: { value: new THREE.Color('#5946b1') },
+    uColorShallow: { value: new THREE.Color('#5dd3d9') },
+    uSkyLow: { value: new THREE.Color('#e6d9f8') },   // lilac haze at horizon
+    uSkyHigh: { value: new THREE.Color('#ffffff') },
+    uSunDir: { value: new THREE.Vector3(-0.35, 0.32, -0.88).normalize() },
   };
 
   const material = new THREE.ShaderMaterial({
@@ -181,8 +185,8 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
     depthWrite: false,
   });
 
-  const points = new THREE.Points(geometry, material);
-  scene.add(points);
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
 
   /* ----- Pointer interaction: analytic ray → y=0 plane ----- */
   const raycaster = new THREE.Raycaster();
@@ -192,6 +196,8 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
   let rippleIndex = 0;
   let lastRippleTime = 0;
   const lastRipplePos = new THREE.Vector2(1e9, 1e9);
+
+  const clock = new THREE.Clock();
 
   function onPointerMove(e) {
     const rect = mount.getBoundingClientRect();
@@ -205,19 +211,17 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
 
     const now = clock.getElapsedTime();
     const moved = lastRipplePos.distanceTo(new THREE.Vector2(hit.x, hit.z));
-    if (now - lastRippleTime > 0.15 && moved > 0.5) {
-      ripples[rippleIndex].set(hit.x, hit.z, now, 0.9);
+    if (now - lastRippleTime > 0.14 && moved > 0.5) {
+      ripples[rippleIndex].set(hit.x, hit.z, now, 1.0);
       rippleIndex = (rippleIndex + 1) % MAX_RIPPLES;
       lastRippleTime = now;
       lastRipplePos.set(hit.x, hit.z);
     }
   }
-  // Listen on the hero section so text content doesn't block interaction
   const interactionSurface = mount.closest('[data-hero]') || mount;
   interactionSurface.addEventListener('pointermove', onPointerMove, { passive: true });
 
   /* ----- Render loop on the shared GSAP ticker ----- */
-  const clock = new THREE.Clock();
   let running = true;
   let inView = true;
 
@@ -259,8 +263,8 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
     },
     /** 0..1 scroll progress → swell amplitude + camera pitch. */
     setScrollProgress(p) {
-      uniforms.uAmplitude.value = 1.0 + p * 0.65;
-      camera.rotation.x = basePitch - p * 0.07;
+      uniforms.uAmplitude.value = 1.0 + p * 0.7;
+      camera.rotation.x = basePitch - p * 0.045;
     },
     destroy() {
       running = false;
