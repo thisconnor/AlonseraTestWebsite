@@ -492,6 +492,24 @@
   object-fit: cover;
 }
 
+/* ---------- Brand-tinted wave photography behind long sections ---------- */
+
+.bg-wave { position: relative; }
+.bg-wave::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--bg-wave-img) center / cover no-repeat;
+  opacity: 0.55;             /* duotones are already near-white; this stays airy */
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent);
+}
+.bg-wave > * { position: relative; }
+.bg-wave--lilac { --bg-wave-img: url("../assets/img/bg-wave-lilac.webp"); }
+.bg-wave--teal { --bg-wave-img: url("../assets/img/bg-wave-teal.webp"); }
+.bg-wave--navy { --bg-wave-img: url("../assets/img/bg-wave-navy.webp"); }
+
 /* ---------- Decorative wavy-lines backdrop ---------- */
 
 .section--waves {
