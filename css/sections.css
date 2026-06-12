@@ -675,31 +675,62 @@ body[data-page="service"] .section--tinted { background: hsla(272, 80%, 97.5%, 0
 }
 .bio-float.is-visible { visibility: visible; }
 .bio-float__card {
-  width: min(92vw, 50rem);
-  max-height: 80vh;
-  overflow: hidden;
+  width: min(92vw, 54rem);
   background: rgba(255, 255, 255, 0.97);
   border: 1px solid var(--line);
   border-radius: calc(var(--radius-card) * 1.2);
   box-shadow: 0 60px 140px -50px rgba(10, 33, 130, 0.55);
   display: grid;
-  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
-  gap: clamp(1.2rem, 2.5vw, 2rem);
-  padding: clamp(1.4rem, 2.6vw, 2.2rem);
-}
-@media (max-width: 700px) {
-  .bio-float__card { grid-template-columns: 1fr; max-height: 84vh; }
-  .bio-float__photo { max-width: 11rem; }
+  grid-template-columns: minmax(0, 0.45fr) minmax(0, 1.55fr);
+  gap: clamp(1rem, 2vw, 1.6rem);
+  padding: clamp(1.2rem, 2.2vw, 1.8rem);
 }
 .bio-float__photo {
   margin: 0;
   border-radius: 1rem;
   overflow: hidden;
-  aspect-ratio: 1 / 1.05;
+  aspect-ratio: 1 / 1;
   background: var(--grad-band);
   align-self: start;
 }
 .bio-float__photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.bio-float__content { margin-top: 0.9rem; display: grid; gap: 0.7rem; color: var(--ink-soft); font-size: var(--text-small); line-height: 1.6; }
+.bio-float__card h3 { font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.7rem); }
+.bio-float__card .leader-card__role { font-size: 0.85rem; margin-top: 0.2rem; }
+.bio-float__content {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.55rem;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
 .bio-float__content strong { color: var(--navy); }
+@media (max-width: 700px) {
+  .bio-float__card {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: start;
+    width: min(94vw, 30rem);
+  }
+  .bio-float__photo { border-radius: 50%; }
+  .bio-float__card > div { grid-column: auto; }
+  .bio-float__content {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    gap: 0.45rem;
+  }
+  /* The panel cannot scroll, so condense long passages to fit a phone */
+  .bio-float__content p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+  }
+  .bio-float__content li {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
 .bio-float__content ul { margin: 0; padding-left: 1.2em; display: grid; gap: 0.3rem; }
