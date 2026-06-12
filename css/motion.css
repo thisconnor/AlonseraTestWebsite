@@ -1,0 +1,44 @@
+/* ============================================================
+   Motion — initial hidden states (JS-gated), reduced-motion
+   overrides. Content is always visible without JS.
+   ============================================================ */
+
+/* Initial states only apply once JS has booted (html.js) and
+   only when the user accepts motion. */
+@media not (prefers-reduced-motion: reduce) {
+  html.js [data-reveal],
+  html.js [data-stagger] > * {
+    opacity: 0;
+  }
+
+  /* SplitText targets: avoid pre-hiding the whole element (lines are
+     masked individually after splitting); just guard against FOUC. */
+  html.js [data-split] { visibility: hidden; }
+  html.js [data-split].is-split { visibility: visible; }
+
+  html.js [data-hero-seq] { opacity: 0; }
+}
+
+/* If motion bootstrapping throws, restore visibility (belt & braces). */
+html.motion-failed [data-reveal],
+html.motion-failed [data-hero-seq],
+html.motion-failed [data-stagger] > * { opacity: 1 !important; }
+html.motion-failed [data-split] { visibility: visible !important; }
+
+/* will-change is added/removed by JS during animation only. */
+.is-animating { will-change: transform, opacity; }
+
+/* SplitText line masking */
+.split-line-mask { overflow: hidden; display: block; }
+
+/* ---------- Reduced motion: everything visible & static ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+  .marquee__track { animation: none !important; }
+  /* Show the second half of marquee content statically */
+  .marquee { overflow-x: auto; }
+}
