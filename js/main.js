@@ -1,0 +1,119 @@
+/* Boot: capability flags → Lenis/GSAP sync → nav → motion engine →
+   per-page modules. Loaded as a module on every page. */
+import { prefersReducedMotion, isMobileViewport, webglSupported, fontsReady } from './utils.js';
+import { initMotion, heroEntrance, showEverything } from './motion.js';
+
+document.documentElement.classList.add('js');
+
+gsap.registerPlugin(ScrollTrigger, SplitText, Flip);
+
+const reduced = prefersReducedMotion();
+const page = document.body.dataset.page;
+
+/* ---------- Smooth scroll (skipped under reduced motion) ---------- */
+let lenis = null;
+if (!reduced) {
+  lenis = new Lenis({ autoRaf: false, lerp: 0.115 });
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((time) => lenis.raf(time * 1000));
+  gsap.ticker.lagSmoothing(0);
+}
+
+/* ---------- Navigation ---------- */
+function initNav() {
+  const nav = document.querySelector('[data-nav]');
+  if (!nav) return;
+
+  // Mark the current page's link
+  const here = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav__link, .menu__link').forEach((a) => {
+    if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
+  });
+
+  // Scrolled state + hide-on-down/show-on-up
+  let lastY = 0;
+  const onScroll = (y) => {
+    nav.classList.toggle('is-scrolled', y > 24);
+    if (y > 160 && y > lastY + 4) nav.classList.add('is-hidden');
+    else if (y < lastY - 4 || y <= 160) nav.classList.remove('is-hidden');
+    lastY = y;
+  };
+  if (lenis) lenis.on('scroll', ({ scroll }) => onScroll(scroll));
+  else window.addEventListener('scroll', () => onScroll(window.scrollY), { passive: true });
+  onScroll(window.scrollY);
+
+  // Mobile menu
+  const burger = document.querySelector('[data-menu-toggle]');
+  const menu = document.querySelector('[data-menu]');
+  if (!burger || !menu) return;
+  const links = menu.querySelectorAll('.menu__link, .menu__contact');
+
+  const setOpen = (open) => {
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    menu.classList.toggle('is-open', open);
+    if (open) {
+      lenis?.stop();
+      if (!reduced) {
+        gsap.fromTo(links, { y: 34, opacity: 0 }, {
+          y: 0, opacity: 1, duration: 0.7, stagger: 0.06, ease: 'expo.out', delay: 0.08,
+        });
+      }
+    } else {
+      lenis?.start();
+    }
+  };
+
+  burger.addEventListener('click', () => setOpen(burger.getAttribute('aria-expanded') !== 'true'));
+  menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.classList.contains('is-open')) setOpen(false);
+  });
+}
+
+/* ---------- Anchor links through Lenis ---------- */
+function initAnchors() {
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (!target) return;
+      e.preventDefault();
+      if (lenis) lenis.scrollTo(target, { offset: -70 });
+      else target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+}
+
+/* ---------- Boot ---------- */
+initNav();
+initAnchors();
+
+if (reduced) {
+  showEverything();
+} else {
+  try {
+    initMotion();
+
+    // Entrance choreography starts once fonts settle (or 1.5s, whichever first)
+    fontsReady(1500).then(() => {
+      const tl = heroEntrance();
+      if (page === 'home') {
+        import('./home.js').then(({ initHome }) => {
+          initHome({ tl, lenis, isMobile: isMobileViewport(), webglOK: webglSupported() });
+        }).catch((err) => {
+          console.warn('Home module failed; using static hero.', err);
+          document.querySelector('[data-hero]')?.classList.add('is-fallback');
+        });
+      }
+    });
+  } catch (err) {
+    document.documentElement.classList.add('motion-failed');
+    console.error('Motion init failed:', err);
+  }
+}
+
+if (page === 'home' && reduced) {
+  document.querySelector('[data-hero]')?.classList.add('is-fallback');
+}
+
+window.addEventListener('load', () => ScrollTrigger.refresh());
