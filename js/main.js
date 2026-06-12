@@ -125,11 +125,55 @@ function initContactForm() {
   });
 }
 
+/* ---------- Team bio modal ---------- */
+function initBioModals() {
+  const modal = document.querySelector('[data-bio-modal]');
+  if (!modal) return;
+  const photo = modal.querySelector('[data-bio-photo]');
+  const nameEl = modal.querySelector('[data-bio-name]');
+  const roleEl = modal.querySelector('[data-bio-role]');
+  const contentEl = modal.querySelector('[data-bio-content]');
+
+  function open(card) {
+    const slug = card.dataset.bio;
+    const tpl = document.querySelector(`template[data-bio-for="${slug}"]`);
+    if (!tpl) return;
+    const img = card.querySelector('img');
+    const name = card.querySelector('h4')?.textContent ?? '';
+    photo.src = img?.src ?? '';
+    photo.alt = name;
+    nameEl.textContent = name;
+    roleEl.textContent = card.querySelector('.team-card__meta span')?.textContent ?? '';
+    contentEl.replaceChildren(tpl.content.cloneNode(true));
+    modal.showModal();
+    if (!reduced) {
+      gsap.fromTo(modal, { y: 26, opacity: 0, scale: 0.97 }, {
+        y: 0, opacity: 1, scale: 1, duration: 0.45, ease: 'expo.out',
+      });
+    }
+  }
+
+  document.querySelectorAll('.team-card.has-bio').forEach((card) => {
+    card.addEventListener('click', () => open(card));
+    card.querySelector('.team-card__meet')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      open(card);
+    });
+  });
+
+  modal.querySelector('[data-bio-close]')?.addEventListener('click', () => modal.close());
+  modal.addEventListener('click', (e) => {
+    // Click on the backdrop (outside the layout) closes the dialog
+    if (e.target === modal) modal.close();
+  });
+}
+
 /* ---------- Boot ---------- */
 initNav();
 initAnchors();
 initAmbientVideos();
 initContactForm();
+initBioModals();
 
 if (reduced) {
   showEverything();
