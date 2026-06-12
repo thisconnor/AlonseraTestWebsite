@@ -576,3 +576,130 @@
   padding: var(--gutter);
 }
 .notfound h1 { font-size: clamp(4rem, 16vw, 9rem); }
+
+/* ---------- Cursor parallax offsets (driven by --mx/--my from JS) ---------- */
+
+.bg-wave::before,
+.section--waves::before {
+  transform: translate3d(calc(var(--mx, 0) * 1px), calc(var(--my, 0) * 1px), 0) scale(1.06);
+  will-change: transform;
+}
+
+/* ---------- Flow-waves ambient layer (service pages) ---------- */
+
+.flow-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.65;
+}
+body[data-page="service"] main,
+body[data-page="service"] footer { position: relative; z-index: 1; }
+body[data-page="service"] .section--tinted { background: hsla(272, 80%, 97.5%, 0.72); }
+
+/* ---------- Service offer cards with stat chips ---------- */
+
+.offer-card { display: grid; gap: 0.8rem; align-content: start; }
+.offer-card .stat-chip {
+  justify-self: start;
+  font-size: var(--text-small);
+  font-weight: 650;
+  color: var(--navy);
+  background: linear-gradient(100deg, hsla(272, 80%, 94%, 0.9), hsla(183, 60%, 90%, 0.9));
+  border-radius: var(--radius-pill);
+  padding: 0.45em 1em;
+}
+
+/* ---------- Testimonial quotes ---------- */
+
+.quote-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--purple);
+  border-radius: var(--radius-card);
+  padding: clamp(1.6rem, 3vw, 2.4rem);
+  display: grid;
+  gap: 1rem;
+}
+.quote-card blockquote {
+  margin: 0;
+  font-size: var(--text-lead);
+  line-height: 1.55;
+  color: var(--ink);
+}
+.quote-card cite {
+  font-style: normal;
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+}
+
+/* ---------- Chapter accordion summaries ---------- */
+
+.chapter-list button.chapter-row {
+  width: 100%;
+  text-align: left;
+  justify-content: space-between;
+}
+.chapter-row .chapter-toggle {
+  flex: none;
+  width: 1.6rem; height: 1.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lavender-ghost);
+  color: var(--purple);
+  font-weight: 700;
+  transition: transform 0.3s var(--ease-out), background-color 0.3s ease;
+}
+.chapter-list li.is-open .chapter-toggle { transform: rotate(45deg); background: var(--lavender); }
+.chapter-summary { padding: 0 0.25rem; }
+.chapter-summary p {
+  max-width: 64ch;
+  color: var(--ink-soft);
+  padding-bottom: clamp(1.1rem, 2.4vw, 1.6rem);
+}
+
+/* ---------- Floating bio panel (hover to meet) ---------- */
+
+.bio-float {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  pointer-events: none; /* never traps the cursor */
+  opacity: 0;
+  visibility: hidden;
+}
+.bio-float.is-visible { visibility: visible; }
+.bio-float__card {
+  width: min(92vw, 50rem);
+  max-height: 80vh;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius-card) * 1.2);
+  box-shadow: 0 60px 140px -50px rgba(10, 33, 130, 0.55);
+  display: grid;
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
+  gap: clamp(1.2rem, 2.5vw, 2rem);
+  padding: clamp(1.4rem, 2.6vw, 2.2rem);
+}
+@media (max-width: 700px) {
+  .bio-float__card { grid-template-columns: 1fr; max-height: 84vh; }
+  .bio-float__photo { max-width: 11rem; }
+}
+.bio-float__photo {
+  margin: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+  aspect-ratio: 1 / 1.05;
+  background: var(--grad-band);
+  align-self: start;
+}
+.bio-float__photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.bio-float__content { margin-top: 0.9rem; display: grid; gap: 0.7rem; color: var(--ink-soft); font-size: var(--text-small); line-height: 1.6; }
+.bio-float__content strong { color: var(--navy); }
+.bio-float__content ul { margin: 0; padding-left: 1.2em; display: grid; gap: 0.3rem; }

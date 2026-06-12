@@ -18,6 +18,7 @@ const MAX_RIPPLES = 6;
 const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform float uAmplitude;
+  uniform vec3 uMouse;     // xy: world pos of smoothed cursor, z: strength 0..1
   uniform vec4 uRipples[${MAX_RIPPLES}]; // xy: world pos, z: start time, w: strength
   varying vec3 vNormal;
   varying vec3 vWorldPos;
@@ -55,17 +56,23 @@ const vertexShader = /* glsl */ `
     disp += gerstner(vec2(-0.20, -0.95), 0.08, 1.6, p, T, B, crest);
     disp += gerstner(vec2( 0.55,  0.80), 0.06, 0.9, p, T, B, crest);
 
-    // Pointer ripples: expanding damped rings (vertical only)
-    float rippleSum = 0.0;
+    // Smoothed cursor swell: a soft travelling bulge that locally lifts
+    // the sea and amplifies the existing waves — flowing, never choppy
+    float mouseGauss = exp(-pow(distance(p.xz, uMouse.xy), 2.0) * 0.06) * uMouse.z;
+    disp.y += mouseGauss * 0.55 * uAmplitude;
+    disp.y += disp.y * mouseGauss * 0.6; // waves grow under the cursor
+
+    // Pointer wake: wide, slow rings in the same wave language
+    float rippleSum = mouseGauss;
     for (int i = 0; i < ${MAX_RIPPLES}; i++) {
       vec4 r = uRipples[i];
       if (r.w > 0.001) {
         float age = uTime - r.z;
-        if (age > 0.0 && age < 3.0) {
+        if (age > 0.0 && age < 4.0) {
           float d = distance(p.xz, r.xy);
-          float ring = sin(d * 3.2 - age * 5.0) * exp(-d * 0.42) * exp(-age * 1.15) * r.w;
-          disp.y += ring * 0.5;
-          rippleSum += abs(ring);
+          float ring = sin(d * 1.5 - age * 2.6) * exp(-d * 0.3) * exp(-age * 0.85) * r.w;
+          disp.y += ring * 0.3;
+          rippleSum += abs(ring) * 0.6;
         }
       }
     }
@@ -124,12 +131,16 @@ const fragmentShader = /* glsl */ `
                   * fbm(vWorldPos.xz * 6.0 + uTime * 0.6);
     col += vec3(1.0, 0.98, 0.94) * (spec * 1.6 + glitter * 0.5);
 
-    // Foam: crests + slope + drifting noise, plus pointer ripple rings
+    // Foam: crests + slope + drifting noise (natural waves only)
     float slope = 1.0 - n.y;
     float foamNoise = fbm(vWorldPos.xz * 1.7 + vec2(uTime * 0.22, -uTime * 0.13));
     float foam = smoothstep(0.68, 0.92, vCrest * (0.65 + slope * 3.2) * (0.55 + foamNoise * 0.7));
-    foam = clamp(foam + vRipple * foamNoise * 1.4, 0.0, 1.0);
     col = mix(col, vec3(0.97, 0.96, 1.0), foam * 0.85);
+
+    // The cursor's swell shades within the water palette: a gentle teal
+    // lift with a hint of the sky, so it blends with the rolling sea
+    col = mix(col, uColorShallow, clamp(vRipple, 0.0, 1.0) * 0.30);
+    col += sky * vRipple * 0.10;
 
     // Distance fog dissolves the horizon into the page sky
     float dist = length(cameraPosition - vWorldPos);
@@ -168,6 +179,7 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
     uTime: { value: 0 },
     uFade: { value: 0 },
     uAmplitude: { value: 1.0 },
+    uMouse: { value: new THREE.Vector3(0, 0, 0) },
     uRipples: { value: ripples },
     uColorDeep: { value: new THREE.Color('#131c66') },
     uColorMid: { value: new THREE.Color('#5946b1') },
@@ -199,6 +211,7 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
 
   const clock = new THREE.Clock();
 
+  const mouseTarget = new THREE.Vector3(0, 0, 0); // x, z, strength
   function onPointerMove(e) {
     const rect = mount.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -208,20 +221,22 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
     );
     raycaster.setFromCamera(ndc, camera);
     if (!raycaster.ray.intersectPlane(plane, hit)) return;
+    mouseTarget.set(hit.x, hit.z, 1);
 
     const now = clock.getElapsedTime();
     const moved = lastRipplePos.distanceTo(new THREE.Vector2(hit.x, hit.z));
-    if (now - lastRippleTime > 0.08 && moved > 0.3) {
-      // Faster strokes throw bigger wakes
-      const strength = Math.min(0.6 + moved * 0.5, 1.7);
+    if (now - lastRippleTime > 0.22 && moved > 0.9) {
+      const strength = Math.min(0.45 + moved * 0.25, 1.0);
       ripples[rippleIndex].set(hit.x, hit.z, now, strength);
       rippleIndex = (rippleIndex + 1) % MAX_RIPPLES;
       lastRippleTime = now;
       lastRipplePos.set(hit.x, hit.z);
     }
   }
+  function onPointerLeave() { mouseTarget.z = 0; }
   const interactionSurface = mount.closest('[data-hero]') || mount;
   interactionSurface.addEventListener('pointermove', onPointerMove, { passive: true });
+  interactionSurface.addEventListener('pointerleave', onPointerLeave, { passive: true });
 
   /* ----- Render loop on the shared GSAP ticker ----- */
   let running = true;
@@ -230,6 +245,10 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
   function render() {
     if (!running || !inView || document.hidden) return;
     uniforms.uTime.value = clock.getElapsedTime();
+    // Ease the cursor swell toward its target for a flowing, liquid feel
+    uniforms.uMouse.value.x += (mouseTarget.x - uniforms.uMouse.value.x) * 0.045;
+    uniforms.uMouse.value.y += (mouseTarget.y - uniforms.uMouse.value.y) * 0.045;
+    uniforms.uMouse.value.z += (mouseTarget.z - uniforms.uMouse.value.z) * 0.06;
     renderer.render(scene, camera);
   }
   gsap.ticker.add(render);
@@ -274,6 +293,7 @@ export async function createOcean(mount, { tier = 'desktop' } = {}) {
       io.disconnect();
       window.removeEventListener('resize', onResizeDebounced);
       interactionSurface.removeEventListener('pointermove', onPointerMove);
+      interactionSurface.removeEventListener('pointerleave', onPointerLeave);
       geometry.dispose();
       material.dispose();
       renderer.dispose();

@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
 const BASE = process.env.QA_BASE || 'http://localhost:3210/AlonseraTestWebsite/';
-const PAGES = ['index.html', 'what-we-do.html', 'who-we-are.html', 'insights.html', 'contact.html'];
+const PAGES = ['index.html', 'what-we-do.html', 'who-we-are.html', 'insights.html', 'contact.html', 'strategic-consulting.html', 'global-ai-coe.html', 'venture-studio.html'];
 const VIEWPORTS = [
   { name: 'mobile', width: 375, height: 812 },
   { name: 'tablet', width: 768, height: 1024 },
@@ -38,10 +38,12 @@ async function auditPage(pageName, vp, { reducedMotion = false } = {}) {
   });
   page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`));
   page.on('requestfailed', (req) => {
-    // Typekit is expected to fail off-domain; ignore it.
-    if (!req.url().includes('typekit')) {
-      problems.push(`requestfailed: ${req.url()} (${req.failure()?.errorText})`);
-    }
+    const err = req.failure()?.errorText ?? '';
+    // Typekit is expected to fail off-domain. Media elements routinely
+    // abort and re-issue range requests (ERR_ABORTED) — not a failure.
+    if (req.url().includes('typekit')) return;
+    if (err === 'net::ERR_ABORTED' && /\.(mp4|webm)(\?|$)/.test(req.url())) return;
+    problems.push(`requestfailed: ${req.url()} (${err})`);
   });
   page.on('response', (res) => {
     if (res.status() >= 400 && !res.url().includes('typekit')) {

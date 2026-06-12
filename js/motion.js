@@ -272,6 +272,61 @@ export function initHeroWaveStrokes() {
   });
 }
 
+/* Backgrounds lean toward the cursor: bg-wave photography, wavy-lines
+   accents and page-hero strokes drift on a smoothed pointer offset. */
+function initCursorParallax() {
+  if (!hasFinePointer()) return;
+  const layers = [
+    ...[...document.querySelectorAll('.bg-wave')].map((el) => ({ el, depth: 18, vars: true })),
+    ...[...document.querySelectorAll('.section--waves')].map((el) => ({ el, depth: 12, vars: true })),
+    ...[...document.querySelectorAll('.page-hero__waves')].map((el) => ({ el, depth: 30, vars: false })),
+  ];
+  if (!layers.length) return;
+  layers.forEach((l) => {
+    if (!l.vars) l.setX = gsap.quickTo(l.el, 'x', { duration: 1.1, ease: 'power2.out' });
+    if (!l.vars) l.setY = gsap.quickTo(l.el, 'y', { duration: 1.1, ease: 'power2.out' });
+  });
+  window.addEventListener('pointermove', (e) => {
+    const nx = (e.clientX / window.innerWidth) * 2 - 1;
+    const ny = (e.clientY / window.innerHeight) * 2 - 1;
+    layers.forEach((l) => {
+      if (l.vars) {
+        gsap.to(l.el, {
+          '--mx': nx * l.depth,
+          '--my': ny * l.depth,
+          duration: 1.1,
+          ease: 'power2.out',
+          overwrite: 'auto',
+        });
+      } else {
+        l.setX(nx * l.depth);
+        l.setY(ny * l.depth);
+      }
+    });
+  }, { passive: true });
+}
+
+/* Chapter accordion: click a row to reveal its summary. */
+function initChapterAccordion() {
+  document.querySelectorAll('.chapter-list li').forEach((li) => {
+    const row = li.querySelector('.chapter-row');
+    const summary = li.querySelector('.chapter-summary');
+    if (!row || !summary) return;
+    gsap.set(summary, { height: 0, opacity: 0, overflow: 'hidden' });
+    row.addEventListener('click', () => {
+      const open = row.getAttribute('aria-expanded') === 'true';
+      row.setAttribute('aria-expanded', String(!open));
+      li.classList.toggle('is-open', !open);
+      gsap.to(summary, {
+        height: open ? 0 : 'auto',
+        opacity: open ? 0 : 1,
+        duration: 0.55,
+        ease: open ? 'power2.in' : 'expo.out',
+      });
+    });
+  });
+}
+
 /* Reduced-motion / failure path: make everything visible immediately. */
 export function showEverything() {
   document.querySelectorAll('[data-reveal], [data-hero-seq], [data-split], [data-scrub-text]')
@@ -294,4 +349,6 @@ export function initMotion() {
   initMagnetic();
   initWaveDividers({ animate: true });
   initHeroWaveStrokes();
+  initCursorParallax();
+  initChapterAccordion();
 }

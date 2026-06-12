@@ -125,47 +125,93 @@ function initContactForm() {
   });
 }
 
-/* ---------- Team bio modal ---------- */
-function initBioModals() {
-  const modal = document.querySelector('[data-bio-modal]');
-  if (!modal) return;
-  const photo = modal.querySelector('[data-bio-photo]');
-  const nameEl = modal.querySelector('[data-bio-name]');
-  const roleEl = modal.querySelector('[data-bio-role]');
-  const contentEl = modal.querySelector('[data-bio-content]');
+/* ---------- Team bio: hover (or tap) shows a centered floating panel ---------- */
+function initBioHover() {
+  const panel = document.querySelector('[data-bio-float]');
+  if (!panel) return;
+  const photo = panel.querySelector('[data-bio-photo]');
+  const nameEl = panel.querySelector('[data-bio-name]');
+  const roleEl = panel.querySelector('[data-bio-role]');
+  const contentEl = panel.querySelector('[data-bio-content]');
+  const card = panel.querySelector('.bio-float__card');
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let hideTimer = null;
+  let current = null;
 
-  function open(card) {
-    const slug = card.dataset.bio;
+  function populate(tile) {
+    const slug = tile.dataset.bio;
     const tpl = document.querySelector(`template[data-bio-for="${slug}"]`);
-    if (!tpl) return;
-    const img = card.querySelector('img');
-    const name = card.querySelector('h4')?.textContent ?? '';
-    photo.src = img?.src ?? '';
-    photo.alt = name;
-    nameEl.textContent = name;
-    roleEl.textContent = card.querySelector('.team-card__meta span')?.textContent ?? '';
+    if (!tpl) return false;
+    photo.src = tile.querySelector('img')?.src ?? '';
+    photo.alt = '';
+    nameEl.textContent = tile.querySelector('h4')?.textContent ?? '';
+    roleEl.textContent = tile.querySelector('.team-card__meta span')?.textContent ?? '';
     contentEl.replaceChildren(tpl.content.cloneNode(true));
-    modal.showModal();
-    if (!reduced) {
-      gsap.fromTo(modal, { y: 26, opacity: 0, scale: 0.97 }, {
-        y: 0, opacity: 1, scale: 1, duration: 0.45, ease: 'expo.out',
-      });
+    return true;
+  }
+
+  function show(tile) {
+    clearTimeout(hideTimer);
+    if (current === tile) return;
+    const swap = current !== null;
+    if (!populate(tile)) return;
+    current = tile;
+    panel.classList.add('is-visible');
+    if (reduced) {
+      panel.style.opacity = '1';
+    } else if (swap) {
+      gsap.fromTo(card, { scale: 0.985, opacity: 0.7 }, { scale: 1, opacity: 1, duration: 0.25, ease: 'power2.out' });
+      gsap.set(panel, { opacity: 1 });
+    } else {
+      gsap.fromTo(panel, { opacity: 0 }, { opacity: 1, duration: 0.28, ease: 'power2.out' });
+      gsap.fromTo(card, { y: 18, scale: 0.97 }, { y: 0, scale: 1, duration: 0.4, ease: 'expo.out' });
     }
   }
 
-  document.querySelectorAll('.team-card.has-bio').forEach((card) => {
-    card.addEventListener('click', () => open(card));
-    card.querySelector('.team-card__meet')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      open(card);
-    });
-  });
+  function hide() {
+    hideTimer = setTimeout(() => {
+      current = null;
+      if (reduced) {
+        panel.style.opacity = '0';
+        panel.classList.remove('is-visible');
+      } else {
+        gsap.to(panel, {
+          opacity: 0,
+          duration: 0.22,
+          ease: 'power2.in',
+          onComplete: () => panel.classList.remove('is-visible'),
+        });
+      }
+    }, 140); // grace period to glide between cards without flicker
+  }
 
-  modal.querySelector('[data-bio-close]')?.addEventListener('click', () => modal.close());
-  modal.addEventListener('click', (e) => {
-    // Click on the backdrop (outside the layout) closes the dialog
-    if (e.target === modal) modal.close();
+  document.querySelectorAll('.team-card.has-bio').forEach((tile) => {
+    if (fine) {
+      tile.addEventListener('mouseenter', () => show(tile));
+      tile.addEventListener('mouseleave', hide);
+    } else {
+      tile.addEventListener('click', () => (current === tile ? hide() : show(tile)));
+    }
+    tile.addEventListener('focusin', () => show(tile));
+    tile.addEventListener('focusout', hide);
   });
+  if (!fine) {
+    document.addEventListener('click', (e) => {
+      if (current && !e.target.closest('.team-card')) hide();
+    });
+  }
+}
+
+/* ---------- Flow-waves ambient layers ---------- */
+function initFlowWaves() {
+  const mounts = document.querySelectorAll('[data-flow-waves]');
+  if (!mounts.length) return;
+  import('./flow-waves.js').then(({ createFlowWaves }) => {
+    mounts.forEach((mount) => {
+      const fw = createFlowWaves(mount, { tint: mount.dataset.flowWaves || 'lilac', reduced });
+      window.addEventListener('pagehide', () => fw.destroy(), { once: true });
+    });
+  }).catch(() => {});
 }
 
 /* ---------- Boot ---------- */
@@ -173,7 +219,8 @@ initNav();
 initAnchors();
 initAmbientVideos();
 initContactForm();
-initBioModals();
+initBioHover();
+initFlowWaves();
 
 if (reduced) {
   showEverything();
