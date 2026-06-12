@@ -327,6 +327,57 @@ function initChapterAccordion() {
   });
 }
 
+/* Seamless GSAP logo marquees. Markup provides one .logo-marquee__set;
+   it is cloned until the track exceeds twice the viewport, then shifted
+   by exactly one set-width per loop (the set carries its own trailing
+   gap, so the seam is invisible). Hover eases the speed down. */
+export function initLogoMarquees({ animate = true } = {}) {
+  document.querySelectorAll('[data-logo-marquee]').forEach((wrap) => {
+    const track = wrap.querySelector('.logo-marquee__track');
+    const set = wrap.querySelector('.logo-marquee__set');
+    if (!track || !set) return;
+    if (!animate) {
+      wrap.classList.add('is-static');
+      return;
+    }
+    const speed = parseFloat(wrap.dataset.logoMarquee || '55'); // px per second
+    const reverse = wrap.hasAttribute('data-logo-marquee-reverse');
+
+    const build = () => {
+      track.querySelectorAll('.logo-marquee__set:not(:first-child)').forEach((s) => s.remove());
+      const setW = set.offsetWidth;
+      if (!setW) return null;
+      const copies = Math.max(2, Math.ceil((wrap.clientWidth * 2) / setW));
+      for (let i = 1; i < copies; i++) track.appendChild(set.cloneNode(true));
+      return setW;
+    };
+
+    let tween = null;
+    const start = () => {
+      tween?.kill();
+      const setW = build();
+      if (!setW) return;
+      gsap.set(track, { x: reverse ? -setW : 0 });
+      tween = gsap.to(track, {
+        x: reverse ? 0 : -setW,
+        duration: setW / speed,
+        ease: 'none',
+        repeat: -1,
+      });
+    };
+    start();
+
+    wrap.addEventListener('mouseenter', () => tween && gsap.to(tween, { timeScale: 0.12, duration: 0.5 }));
+    wrap.addEventListener('mouseleave', () => tween && gsap.to(tween, { timeScale: 1, duration: 0.5 }));
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(start, 200);
+    });
+  });
+}
+
 /* Reduced-motion / failure path: make everything visible immediately. */
 export function showEverything() {
   document.querySelectorAll('[data-reveal], [data-hero-seq], [data-split], [data-scrub-text]')
@@ -337,6 +388,7 @@ export function showEverything() {
   document.querySelectorAll('[data-stagger]').forEach((group) => {
     [...group.children].forEach((c) => { c.style.opacity = '1'; });
   });
+  document.querySelectorAll('.logo-marquee').forEach((m) => m.classList.add('is-static'));
 }
 
 export function initMotion() {
@@ -351,4 +403,5 @@ export function initMotion() {
   initHeroWaveStrokes();
   initCursorParallax();
   initChapterAccordion();
+  initLogoMarquees({ animate: true });
 }
